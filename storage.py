@@ -26,13 +26,22 @@ def update_task(task_id, title=None, description=None, completed=None):
     return task, None
 
 
-def delete_task(task_id):
-    task = storage.delete_task(task_id)
+def delete_task(task_id):   
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
+    task = cursor.fetchone()
 
     if task is None:
-        return None, "Task not found"
+        conn.close()
+        return None
 
-    return task, None
+    cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+    conn.commit()
+
+    conn.close()
+    return dict(task)
 
 
 def complete_task(task_id):
