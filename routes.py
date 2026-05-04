@@ -28,12 +28,18 @@ def create_task():
         return jsonify({"error": "Request body must be JSON"}), 400
 
     title = data.get("title")
-    description = data.get("description")
+    description = data.get("description", "")
 
-    if not title:
+    if title is None or not title.strip():
         return jsonify({"error": "Title is required"}), 400
 
-    task = service.create_task(title, description)
+    title = title.strip()
+    description = description.strip() if description else ""
+
+    task, error = service.create_task(title, description)
+
+    if error:
+        return jsonify({"error": error}), 400
 
     return jsonify(task), 201
 
@@ -46,15 +52,18 @@ def update_task(task_id):
         return jsonify({"error": "Request body must be JSON"}), 400
 
     title = data.get("title")
-    description = data.get("description")
+    description = data.get("description", "")
 
-    if not title:
+    if title is None or not title.strip():
         return jsonify({"error": "Title is required"}), 400
 
-    task = service.update_task(task_id, title, description)
+    title = title.strip()
+    description = description.strip() if description else ""
 
-    if task is None:
-        return jsonify({"error": "Task not found"}), 404
+    task, error = service.update_task(task_id, title, description)
+
+    if error:
+        return jsonify({"error": error}), 404
 
     return jsonify(task), 200
 
