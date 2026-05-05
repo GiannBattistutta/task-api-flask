@@ -1,88 +1,39 @@
-import sqlite3
-
-DATABASE_NAME = "tasks.db"
-
-
-def get_connection():
-    conn = sqlite3.connect(DATABASE_NAME)
-    conn.row_factory = sqlite3.Row
-    return conn
+import storage
 
 
 def get_all_tasks():
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM tasks")
-    tasks = [dict(row) for row in cursor.fetchall()]
-
-    conn.close()
-    return tasks
+    return storage.get_all_tasks()
 
 
 def get_task_by_id(task_id):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
-    row = cursor.fetchone()
-
-    conn.close()
-    return dict(row) if row else None
+    return storage.get_task_by_id(task_id)
 
 
-def create_task(title, description):
-    conn = get_connection()
-    cursor = conn.cursor()
+def create_task(title, description=""):
+    if title is None or not title.strip():
+        return None, "Title is required"
 
-    cursor.execute(
-        "INSERT INTO tasks (title, description) VALUES (?, ?)",
-        (title, description)
-    )
+    title = title.strip()
+    description = description.strip() if description else ""
 
-    conn.commit()
+    task = storage.create_task(title, description)
 
-    task_id = cursor.lastrowid
-
-    cursor.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
-    task = dict(cursor.fetchone())
-
-    conn.close()
-    return task
+    return task, None
 
 
 def update_task(task_id, title=None, description=None, completed=None):
-    conn = get_connection()
-    cursor = conn.cursor()
+    task = storage.update_task(task_id, title, description, completed)
 
-    task = get_task_by_id(task_id)
-    if not task:
-        return None
+    if task is None:
+        return None, "Task not found"
 
-    title = title if title is not None else task["title"]
-    description = description if description is not None else task["description"]
-    completed = completed if completed is not None else task["completed"]
-
-    cursor.execute(
-        "UPDATE tasks SET title=?, description=?, completed=? WHERE id=?",
-        (title, description, completed, task_id)
-    )
-
-    conn.commit()
-
-    cursor.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
-    updated = dict(cursor.fetchone())
-
-    conn.close()
-    return updated
+    return task, None
 
 
 def delete_task(task_id):
-    conn = get_connection()
-    cursor = conn.cursor()
+    task = storage.delete_task(task_id)
 
-    cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
-    conn.commit()
+    if task is None:
+        return None, "Task not found"
 
-    conn.close()
-    return True
+    return task, None

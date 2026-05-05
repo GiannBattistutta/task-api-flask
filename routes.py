@@ -52,15 +52,27 @@ def update_task(task_id):
         return jsonify({"error": "Request body must be JSON"}), 400
 
     title = data.get("title")
-    description = data.get("description", "")
+    description = data.get("description")
+    completed = data.get("completed")
 
-    if title is None or not title.strip():
-        return jsonify({"error": "Title is required"}), 400
+    if title is not None:
+        title = title.strip()
 
-    title = title.strip()
-    description = description.strip() if description else ""
+        if not title:
+            return jsonify({"error": "Title cannot be empty"}), 400
 
-    task, error = service.update_task(task_id, title, description)
+    if description is not None:
+        description = description.strip()
+
+    if completed is not None and not isinstance(completed, bool):
+        return jsonify({"error": "Completed must be true or false"}), 400
+
+    task, error = service.update_task(
+        task_id=task_id,
+        title=title,
+        description=description,
+        completed=completed
+    )
 
     if error:
         return jsonify({"error": error}), 404
@@ -70,21 +82,22 @@ def update_task(task_id):
 
 @tasks_bp.route("/tasks/<int:task_id>", methods=["DELETE"])
 def delete_task(task_id):
-    task = service.get_task_by_id(task_id)
+    task, error = service.delete_task(task_id)
 
-    if task is None:
-        return jsonify({"error": "Task not found"}), 404
+    if error:
+        return jsonify({"error": error}), 404
 
-    service.delete_task(task_id)
-
-    return jsonify({"message": "Task deleted successfully"}), 200
+    return jsonify({
+        "message": "Task deleted successfully",
+        "deleted_task": task
+    }), 200
 
 
 @tasks_bp.route("/tasks/<int:task_id>/complete", methods=["PATCH"])
 def complete_task(task_id):
-    task = service.update_task(task_id, completed=True)
+    task, error = service.update_task(task_id, completed=True)
 
-    if task is None:
-        return jsonify({"error": "Task not found"}), 404
+    if error:
+        return jsonify({"error": error}), 404
 
     return jsonify(task), 200
